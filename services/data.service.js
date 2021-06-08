@@ -45,11 +45,13 @@ return db.User.findOne({acno})
     .then(user=>{
     
       if(user){
-        req.session.currentUser = user;
+        req.session.currentUser = user.acno;
         return {
           statusCode:200,
           status:  true,
-          message: "Succesfully log in"
+          message: "Succesfully log in",
+          name: user.username,
+          acno: user.acno
         }
       }
       else{
@@ -67,7 +69,7 @@ return db.User.findOne({acno})
  const deposit = (acno,password,amt) =>{
 
   
-    var amount = parseInt(amt);
+    var amount = parseInt(amt)
 
     return db.User.findOne({acno,password})
     .then(user=>{
@@ -78,8 +80,8 @@ return db.User.findOne({acno})
             message: "Invalid Credentials"
           }
       }
-      user.balance+=amount;
-      user.save();
+      user.balance+=amount
+      user.save()
       return {
         statusCode:200,
         status:  true,
@@ -92,7 +94,7 @@ return db.User.findOne({acno})
 
 
 
- const withdraw = (acno,password,amt) =>{
+ const withdraw = (req,acno,password,amt) =>{
 
     var amount = parseInt(amt);
 
@@ -105,6 +107,13 @@ return db.User.findOne({acno})
             message: "Invalid Credentials"
           }
       }
+      if(req.session.currentUser != acno){
+        return {
+          statusCode:422,
+            status:  false,
+            message: "Permission Denied"
+          }
+      }
 
      if(user.balance<amount){
       return {
@@ -113,8 +122,8 @@ return db.User.findOne({acno})
           message: "Insufficient Balance"
         }
      } 
-      user.balance-=amount;
-      user.save();
+      user.balance-=amount
+      user.save()
       return {
         statusCode:200,
         status:  true,
@@ -125,9 +134,30 @@ return db.User.findOne({acno})
   
   }
 
+
+const deleteAccDetails =(acno)=>{
+  return db.User.deleteOne({
+    acno:acno
+  }).then(user=>{
+    if(!user){
+      return {
+        statusCode:422,
+          status:  false,
+          message: "Operation failed"
+        }
+    }
+    return {
+      statusCode:200,
+      status:  true,
+      message: " Account number "+ acno + " deleted successfully"
+    }
+  })
+}
+
   module.exports={
     register,
     login,
     deposit,
-    withdraw
+    withdraw,
+    deleteAccDetails
   }
